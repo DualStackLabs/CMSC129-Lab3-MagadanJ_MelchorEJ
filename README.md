@@ -87,44 +87,35 @@ The application will be accessible at http://localhost:8000.
 - Database Seeders: **database/seeders/DatabaseSeeder.php**
 
 ## Sample Project Structure:
-
 ```bash
-personal-journal/
+your-lab2-project/
 ├── app/
 │   ├── Http/
-│   │   ├── Controllers/      # Your controllers (C in MVC)
-│   │   ├── Middleware/       # HTTP middleware
-│   │   └── Requests/         # Form request validation
-│   ├── Models/               # Your models (M in MVC)
-│   └── ...
-├── database/
-│   ├── migrations/           # Database structure
-│   ├── seeders/              # Sample data generators
-│   └── factories/            # Model factories for testing
-├── public/
-│   ├── css/                  # Compiled CSS
-│   ├── js/                   # Compiled JavaScript
-│   └── images/               # Public images
+│   │   ├── Controllers/
+│   │   │   ├── ChatBotController.php       # Chatbot logic
+│   │   │   ├── AIAssistantController.php   # AI CRUD operations
+│   │   │   └── YourExistingController.php
+│   ├── Services/
+│   │   ├── AIService.php                   # AI API integration
+│   │   ├── PromptService.php               # Prompt engineering
+│   │   └── FunctionCallService.php         # Function calling
 ├── resources/
-│   ├── views/                # Your Blade templates (V in MVC)
-│   │   ├── layouts/          # Master layouts
-│   │   ├── components/       # Reusable components
-│   │   └── ...
-│   ├── css/                  # Source CSS files
-│   └── js/                   # Source JavaScript files
+│   ├── views/
+│   │   ├── layouts/
+│   │   ├── chat/
+│   │   │   ├── index.blade.php             # Chat interface
+│   │   │   └── components/
+│   │   │       └── chat-widget.blade.php   # Chat widget
+│   ├── js/
+│   │   └── chatbot.js                      # Frontend chat logic
 ├── routes/
-│   ├── web.php               # Web routes (main routes for your app)
-│   └── api.php               # API routes
-├── storage/
-│   ├── app/                  # File uploads
-│   ├── logs/                 # Application logs
-│   └── framework/            # Framework files
-├── tests/                    # Application tests
-├── .env                      # Environment variables
-├── .env.example              # Example environment file
-├── composer.json             # PHP dependencies
-├── package.json              # Node dependencies
-└── README.md                 # Your documentation
+│   ├── web.php                             # Add chat routes
+│   └── api.php                             # Optional API routes
+├── database/
+│   └── seeders/
+│       └── DummyDataSeeder.php             # Seed dummy data
+├── .env                                    # Add AI API keys
+└── README.md                               # Updated docs
 ```
 
 # Members:
