@@ -98,7 +98,7 @@ class AIService
         }
 
         try {
-            return AIChatMessage::where('session_id', $sessionId)
+            $messages = AIChatMessage::where('session_id', $sessionId)
                 ->latest()
                 ->take($limit)
                 ->get()
@@ -110,9 +110,15 @@ class AIService
                     'created_at' => $message->created_at?->toISOString(),
                 ])
                 ->all();
+
+            if ($messages !== []) {
+                return $messages;
+            }
         } catch (Throwable) {
-            return [];
+            // Fall back to session history when the chat history table is not migrated yet.
         }
+
+        return $this->sessionHistoryMessages($limit);
     }
 
     private function askModel(string $message): string
@@ -209,6 +215,19 @@ class AIService
         }
 
         return $this->sessionValue('ai_chat_history', []);
+    }
+
+    private function sessionHistoryMessages(int $limit): array
+    {
+        return collect($this->sessionValue('ai_chat_history', []))
+            ->take(-$limit)
+            ->values()
+            ->map(fn (array $message) => [
+                'role' => $message['role'] ?? 'assistant',
+                'content' => $message['content'] ?? '',
+                'created_at' => null,
+            ])
+            ->all();
     }
 
     private function saveMessage(string $role, string $content, array $metadata = []): void

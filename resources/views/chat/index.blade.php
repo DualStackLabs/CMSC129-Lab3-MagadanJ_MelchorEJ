@@ -95,6 +95,7 @@ async function loadMainChatHistory() {
     try {
         const response = await fetch('{{ route('chat.history') }}', {
             headers: { Accept: 'application/json' },
+            cache: 'no-store',
         });
         const data = await response.json();
         const messages = Array.isArray(data.messages) ? data.messages : [];
@@ -152,7 +153,9 @@ async function sendMainChat() {
             appendMainChatConfirmation(box);
         }
 
-        if (data.refresh) {
+        if (data.redirect_url) {
+            setTimeout(() => window.location.assign(data.redirect_url), 900);
+        } else if (data.refresh) {
             setTimeout(() => window.location.reload(), 900);
         }
     } catch(e) {

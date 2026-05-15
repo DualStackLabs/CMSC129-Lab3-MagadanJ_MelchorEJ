@@ -89,13 +89,14 @@ class FunctionCallService
     private function planCreate(string $message): array
     {
         $category = $this->extractCategory($message) ?? 'Personal';
-        $title = $this->extractTitle($message)
-            ?? $this->extractAfterColon($message)
-            ?? 'AI-created journal entry';
-
         $content = $this->extractField($message, ['content', 'body', 'description'])
+            ?? $this->extractSaidContent($message)
             ?? $this->extractQuotedAfter($message, ['about'])
-            ?? 'Created from this AI assistant request: '.$message;
+            ?? $this->extractAfterColon($message)
+            ?? $this->cleanCreateRequest($message);
+
+        $title = $this->extractTitle($message)
+            ?? $this->titleFromContent($content);
 
         return [
             'type' => 'create',
@@ -203,6 +204,7 @@ class FunctionCallService
         return [
             'response' => 'Created '.$this->describeEntry($entry->fresh('category')).'. The entry list will refresh so you can see it.',
             'refresh' => true,
+            'redirect_url' => route('entries.index'),
             'entry_id' => $entry->id,
         ];
     }
@@ -232,6 +234,7 @@ class FunctionCallService
         return [
             'response' => 'Updated '.$this->describeEntry($entry).'. Changed: '.$this->fieldSummary($fields).'. The entry list will refresh now.',
             'refresh' => true,
+            'redirect_url' => route('entries.index'),
             'entry_id' => $entry->id,
         ];
     }
@@ -254,6 +257,7 @@ class FunctionCallService
         return [
             'response' => 'Moved '.$description.' to the trash. The entry list will refresh now.',
             'refresh' => true,
+            'redirect_url' => route('entries.index'),
             'entry_id' => $entry->id,
         ];
     }
@@ -436,22 +440,70 @@ class FunctionCallService
     {
         foreach ($labels as $label) {
             if (preg_match('/\b'.preg_quote($label, '/').'\b\s*(?:is|to|as|:)?\s*["\']([^"\']+)["\']/i', $message, $matches)) {
-                return trim($matches[1]);
+                return $this->cleanExtractedValue($matches[1]);
             }
 
             if (preg_match('/\b'.preg_quote($label, '/').'\b\s*(?:is|to|as|:)\s*([^,.]+)/i', $message, $matches)) {
-                return trim($matches[1]);
+                return $this->cleanExtractedValue($matches[1]);
             }
         }
 
         return null;
     }
 
+    private function extractSaidContent(string $message): ?string
+    {
+        $patterns = [
+            '/\b(?:that\s+)?says?\s+["\']([^"\']+)["\']/i',
+            '/\b(?:that\s+)?says?\s+(.+)/i',
+            '/\bsaying\s+["\']([^"\']+)["\']/i',
+            '/\bsaying\s+(.+)/i',
+            '/\babout\s+["\']([^"\']+)["\']/i',
+            '/\babout\s+(.+)/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $message, $matches)) {
+                return $this->cleanExtractedValue($matches[1]);
+            }
+        }
+
+        return null;
+    }
+
+    private function cleanCreateRequest(string $message): string
+    {
+        $value = preg_replace('/\b(create|add|write)\b\s+(a\s+|an\s+|new\s+)?(journal\s+)?entry\s*(for me)?/i', '', $message);
+
+        return $this->cleanExtractedValue($value ?: $message) ?: 'New journal entry';
+    }
+
+    private function cleanExtractedValue(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim($value);
+        $value = preg_replace('/\s+\bwith\s+(mood|category|location|title|content)\b.*$/i', '', $value);
+        $value = preg_replace('/\s+\bin\s+(the\s+)?(mood|category)\b.*$/i', '', $value);
+        $value = trim($value, " \t\n\r\0\x0B.,");
+
+        return $value !== '' ? $value : null;
+    }
+
+    private function titleFromContent(string $content): string
+    {
+        $title = Str::headline(Str::limit($content, 45, ''));
+
+        return $title !== '' ? $title : 'New Journal Entry';
+    }
+
     private function extractQuotedAfter(string $message, array $labels): ?string
     {
         foreach ($labels as $label) {
             if (preg_match('/\b'.preg_quote($label, '/').'\b\s+["\']([^"\']+)["\']/i', $message, $matches)) {
-                return trim($matches[1]);
+                return $this->cleanExtractedValue($matches[1]);
             }
         }
 
@@ -461,7 +513,7 @@ class FunctionCallService
     private function extractAfterColon(string $message): ?string
     {
         if (preg_match('/:\s*([^,.]+)/', $message, $matches)) {
-            return trim($matches[1]);
+            return $this->cleanExtractedValue($matches[1]);
         }
 
         return null;
