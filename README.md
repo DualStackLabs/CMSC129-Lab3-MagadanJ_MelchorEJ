@@ -186,31 +186,35 @@ What about the favorite ones?
 
 ## Project Structure
 
-```text
-app/
-  Http/Controllers/
-    EntryController.php
-    ChatBotController.php
-    AIAssistantController.php
-  Models/
-    Entry.php
-    Category.php
-    AIChatMessage.php
-  Services/
-    AIService.php
-    PromptService.php
-    FunctionCallService.php
-database/
-  migrations/
-  seeders/DatabaseSeeder.php
-resources/
-  js/chatbot.js
-  views/chat/
-  views/entries/
-  views/layouts/app.blade.php
-routes/
-  web.php
-  api.php
+```bash
+your-lab2-project/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── ChatBotController.php       # Chatbot logic
+│   │   │   ├── AIAssistantController.php   # AI CRUD operations
+│   │   │   └── YourExistingController.php
+│   ├── Services/
+│   │   ├── AIService.php                   # AI API integration
+│   │   ├── PromptService.php               # Prompt engineering
+│   │   └── FunctionCallService.php         # Function calling
+├── resources/
+│   ├── views/
+│   │   ├── layouts/
+│   │   ├── chat/
+│   │   │   ├── index.blade.php             # Chat interface
+│   │   │   └── components/
+│   │   │       └── chat-widget.blade.php   # Chat widget
+│   ├── js/
+│   │   └── chatbot.js                      # Frontend chat logic
+├── routes/
+│   ├── web.php                             # Add chat routes
+│   └── api.php                             # Optional API routes
+├── database/
+│   └── seeders/
+│       └── DummyDataSeeder.php             # Seed dummy data
+├── .env                                    # Add AI API keys
+└── README.md                               # Updated docs
 ```
 ## App Screenshots
 ![App Preview](./assets/ai_workspace_tab.png)
