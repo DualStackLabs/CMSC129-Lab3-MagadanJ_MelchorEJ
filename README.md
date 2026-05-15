@@ -1,125 +1,221 @@
-# CMSC129-Lab2-MagadanJ_MelchorEJ
-# Daily Draft - Personal Journal Application
+# CMSC129-Lab3-MagadanJ_MelchorEJ
 
-## Overview
-Daily Draft is a web-based personal journaling application developed as a Laboratory 2 project. Built on the Laravel MVC framework, the application provides a structured platform for users to document, categorize, and manage their daily journal entries. 
+# Daily Draft - AI Journal Assistant
 
-## Core Features
-- **Complete CRUD Operations:** Create, read, update, and delete journal entries.
-- **Soft Deletion:** Safely remove entries by moving them to a Trash Bin, with options to either restore them or permanently delete them from the database.
-- **Categorization:** Assign entries to specific categories (e.g., Work, School, Personal), which dynamically apply distinct visual themes to the UI.
-- **Media Uploads:** Attach and manage image files within individual journal entries.
-- **Search and Filtering:** Filter entries by predefined moods, category types, and favorite status, alongside a text-based search for entry titles and content.
-- **Form Validation & State Management:** Secure form handling with validation, dynamic unlock/lock logic for update forms, and session-based success notifications.
+Daily Draft is a Laravel MVC personal journal application enhanced for CMSC 129 Laboratory Assignment 3. Users can create, read, update, delete, restore, search, filter, and categorize journal entries. The Lab 3 version adds an on-page AI chatbot and an action-capable AI assistant for natural-language journal inquiries and CRUD operations.
 
-## Technologies Used
-- **Backend Framework:** Laravel (PHP)
-- **Database:** PostgreSQL
-- **Frontend:** Blade Templating Engine, Tailwind CSS (via CDN)
-- **Icons:** Phosphor Icons
+## Lab 3 AI Features
 
-## Prerequisites
-Ensure your local development environment has the following installed:
-- PHP (v8.1 or higher)
+- Floating chatbot widget embedded on the main journal pages, so users can ask questions while viewing entries.
+- Dedicated AI workspace at `/chat` for larger conversations.
+- Backend-only Gemini integration through Laravel HTTP requests.
+- Session conversation history using the last 10 messages for follow-up questions and pronoun references.
+- Saved chat history in the `ai_chat_messages` table, restored after page refresh for the same browser session.
+- Journal-aware prompt context built from recent entries, categories, moods, locations, favorites, and summary facts.
+- Natural-language CRUD assistant:
+  - Create entries by chat command.
+  - Read/query entries through the inquiry chatbot.
+  - Update entries by ID, title, or recent reference.
+  - Delete entries by moving them to the trash.
+- Confirmation flow before destructive operations such as update and delete.
+- UI loading states, error messages, confirmation buttons, and page refresh after successful AI CRUD actions.
+
+## AI Service Used
+
+- Provider: Google Gemini API
+- Default model: `gemini-2.5-flash`
+- Backend files:
+  - `app/Services/AIService.php`
+  - `app/Services/PromptService.php`
+  - `app/Services/FunctionCallService.php`
+  - `app/Http/Controllers/ChatBotController.php`
+  - `app/Http/Controllers/AIAssistantController.php`
+
+## Security Notes
+
+- API keys are stored only in `.env`.
+- `.env` is ignored by Git.
+- Frontend JavaScript only calls Laravel routes.
+- The browser never calls Gemini directly.
+- The AI service uses backend tools to read or modify journal data; the external model never receives database credentials.
+
+## Core Journal Features
+
+- Complete CRUD operations for journal entries.
+- Soft deletion with Trash Bin restore and permanent-delete routes.
+- Categories with visual themes.
+- Mood, category, favorite, and text search filters.
+- Optional image upload per entry.
+- Form validation and session success messages.
+
+## Requirements
+
+- PHP 8.4 or compatible dependency set
 - Composer
+- Node.js 16+
 - PostgreSQL
+- Google Gemini API key
 
-## Installation and Setup
+Note: The current lock file includes Symfony 8 packages that require PHP 8.4+. If your local PHP is lower, reinstall dependencies for your PHP version or upgrade PHP before running Artisan commands.
 
-1. **Clone the repository:**
+## Setup
+
+1. Clone the repository.
+
 ```bash
 git clone [your-repository-url]
-cd [your-repository-name]
+cd CMSC129-Lab3-MagadanJ_MelchorEJ
 ```
 
-2. **Install PHP dependencies:**
+2. Install dependencies.
+
 ```bash
 composer install
+npm install
 ```
 
-3. **Configure environment variables:**
-    Copy the example environment file and update your database credentials.
+3. Create `.env`.
+
 ```bash
 cp .env.example .env
-Open the .env file and configure your PostgreSQL connection:
 ```
-```bash 
+
+4. Configure database and Gemini values in `.env`.
+
+```env
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_DATABASE=your_database_name
 DB_USERNAME=your_database_user
 DB_PASSWORD=your_database_password
-```
-4. **Generate the application key:**
-```bash
-php artisan key:generate
+
+GEMINI_API_KEY=your_real_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
-5.  **Link the storage directory:**
-    This is required to properly display uploaded entry images.
+5. Generate app key, migrate, seed, and link storage.
+
 ```bash
+php artisan key:generate
+php artisan migrate:fresh --seed
 php artisan storage:link
 ```
 
-6. **Run database migrations and seeders:**
-    This will build the database tables and populate them with the initial categories and sample journal entries.
-```bash
-php artisan migrate:fresh --seed
-```
-7. **Start the local development server:**
+6. Build assets and run the app.
 
 ```bash
+npm run build
 php artisan serve
 ```
 
-The application will be accessible at http://localhost:8000.
+Open `http://localhost:8000/entries`.
 
-## Directory Structure Notes
-- Controllers: **app/Http/Controllers/EntryController.php**
+## Dummy Data
 
-- Models: **app/Models/Entry.php, app/Models/Category.php**
+The seeder creates 5 categories and 15 realistic journal entries covering School, Work, Personal, Health, and Ideas. The entries include varied moods such as Happy, Focused, Stressed, Calm, Tired, Excited, and Grateful.
 
-- Views: **resources/views/entries/ and resources/views/layouts/**
+Run:
 
-- Database **Migrations: database/migrations/**
-
-- Database Seeders: **database/seeders/DatabaseSeeder.php**
-
-## Sample Project Structure:
 ```bash
-your-lab2-project/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── ChatBotController.php       # Chatbot logic
-│   │   │   ├── AIAssistantController.php   # AI CRUD operations
-│   │   │   └── YourExistingController.php
-│   ├── Services/
-│   │   ├── AIService.php                   # AI API integration
-│   │   ├── PromptService.php               # Prompt engineering
-│   │   └── FunctionCallService.php         # Function calling
-├── resources/
-│   ├── views/
-│   │   ├── layouts/
-│   │   ├── chat/
-│   │   │   ├── index.blade.php             # Chat interface
-│   │   │   └── components/
-│   │   │       └── chat-widget.blade.php   # Chat widget
-│   ├── js/
-│   │   └── chatbot.js                      # Frontend chat logic
-├── routes/
-│   ├── web.php                             # Add chat routes
-│   └── api.php                             # Optional API routes
-├── database/
-│   └── seeders/
-│       └── DummyDataSeeder.php             # Seed dummy data
-├── .env                                    # Add AI API keys
-└── README.md                               # Updated docs
+php artisan migrate:fresh --seed
 ```
 
-# Members:
-- **Jasmine Magadan**
-- **Eleah Joy Melchor**
+## Example Inquiry Questions
 
+- "How many journal entries do I have?"
+- "Summarize my school entries."
+- "Which entries are marked as favorites?"
+- "What moods appear most often?"
+- "Show me recent ideas."
+- "What was my latest entry?"
+- "Which entries mention deadlines?"
 
+## Example CRUD Commands
+
+Create:
+
+```text
+Create a new entry titled "Defense Prep" content "Reviewed the AI chatbot requirements" mood Focused category School location "Library"
+```
+
+Update:
+
+```text
+Update entry #3 mood to Happy
+```
+
+```text
+Rename "Weekend Vibes" title to "Weekend Reset"
+```
+
+Delete:
+
+```text
+Delete entry #4
+```
+
+After an update or delete request, the assistant asks for confirmation. Reply `yes` or click Confirm to proceed. Reply `cancel` or click Cancel to stop.
+
+## Conversation Context Tests
+
+Try this sequence:
+
+```text
+What was my latest entry?
+Update it mood to Happy
+yes
+```
+
+Try this inquiry sequence:
+
+```text
+Show my school entries.
+Which ones mention deadlines?
+What about the favorite ones?
+```
+
+## Routes
+
+- `GET /entries` - main journal dashboard with embedded chatbot widget
+- `POST /chat-send` - web chatbot and assistant endpoint
+- `GET /chat-history` - saved browser-session chat history endpoint
+- `GET /chat` - dedicated AI workspace
+- `POST /api/chat` - API chatbot endpoint
+- `POST /api/ai-assistant` - API assistant endpoint
+
+## Project Structure
+
+```text
+app/
+  Http/Controllers/
+    EntryController.php
+    ChatBotController.php
+    AIAssistantController.php
+  Models/
+    Entry.php
+    Category.php
+    AIChatMessage.php
+  Services/
+    AIService.php
+    PromptService.php
+    FunctionCallService.php
+database/
+  migrations/
+  seeders/DatabaseSeeder.php
+resources/
+  js/chatbot.js
+  views/chat/
+  views/entries/
+  views/layouts/app.blade.php
+routes/
+  web.php
+  api.php
+```
+## App Screenshots
+![App Preview](./assets/ai_workspace_tab.png)
+
+## Members
+
+- Jasmine Magadan
+- Eleah Joy Melchor
