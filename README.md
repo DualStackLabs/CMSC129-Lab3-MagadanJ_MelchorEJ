@@ -7,9 +7,11 @@ Daily Draft is a Laravel MVC personal journal application enhanced for CMSC 129 
 ## Lab 3 AI Features
 
 - Floating chatbot widget embedded on the main journal pages, so users can ask questions while viewing entries.
-- Dedicated AI workspace at `/chat` for larger conversations.
+- Popup mode selector with Query-only mode for read-only journal inquiries and CRUD Assistant mode for natural-language create/read/update/delete workflows.
 - Backend-only Gemini integration through Laravel HTTP requests.
+- Gemini API fallback keys are supported for demo safety when a key hits quota or fails.
 - Session conversation history using the last 10 messages for follow-up questions and pronoun references.
+- Session preference memory for requests like "I prefer short answers."
 - Saved chat history in the `ai_chat_messages` table, restored after page refresh for the same browser session.
 - Journal-aware prompt context built from recent entries, categories, moods, locations, favorites, and summary facts.
 - Natural-language CRUD assistant:
@@ -18,7 +20,7 @@ Daily Draft is a Laravel MVC personal journal application enhanced for CMSC 129 
   - Update entries by ID, title, or recent reference.
   - Delete entries by moving them to the trash.
 - Confirmation flow before destructive operations such as update and delete.
-- UI loading states, error messages, confirmation buttons, and page refresh after successful AI CRUD actions.
+- UI loading states, rate-limit messages, safe error messages, confirmation buttons, and page refresh after successful AI CRUD actions.
 
 ## AI Service Used
 
@@ -35,9 +37,20 @@ Daily Draft is a Laravel MVC personal journal application enhanced for CMSC 129 
 
 - API keys are stored only in `.env`.
 - `.env` is ignored by Git.
+- `.env.example` contains placeholders only; never paste real keys into committed files.
 - Frontend JavaScript only calls Laravel routes.
 - The browser never calls Gemini directly.
 - The AI service uses backend tools to read or modify journal data; the external model never receives database credentials.
+- Chat routes are throttled to reduce accidental API spam and free-tier quota burn.
+- Backend API errors are logged server-side while the UI shows a generic message without stack traces or secrets.
+
+## AI Architecture
+
+- Browser popup sends messages to Laravel through `POST /chat-send`.
+- `Query only` mode calls the Gemini-backed inquiry chatbot and cannot execute writes.
+- `CRUD Assistant` mode runs Laravel tool handlers first for create, update, and delete commands; if the message is only a question, it answers using the same journal-aware query context.
+- Tool routes under `/api/ai-tools/*` provide controlled access to journal context, facts, lookup, create, update, delete, and categories.
+- Gemini receives formatted journal context through the backend. It never connects to PostgreSQL and never sees database credentials.
 
 ## Core Journal Features
 
@@ -80,7 +93,11 @@ npm install
 cp .env.example .env
 ```
 
-4. Configure database and Gemini values in `.env`.
+4. Get Gemini API keys.
+
+Go to [Google AI Studio](https://aistudio.google.com/app/apikey), create an API key, and paste it into `.env`. The backup keys are optional but useful for demos if the first key hits rate limits.
+
+5. Configure database and Gemini values in `.env`.
 
 ```env
 DB_CONNECTION=pgsql
@@ -91,10 +108,12 @@ DB_USERNAME=your_database_user
 DB_PASSWORD=your_database_password
 
 GEMINI_API_KEY=your_real_gemini_api_key
+GEMINI_API_KEY_BACKUP=your_optional_second_gemini_api_key
+GEMINI_API_KEY_BACKUP_2=your_optional_third_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-5. Generate app key, migrate, seed, and link storage.
+6. Generate app key, migrate, seed, and link storage.
 
 ```bash
 php artisan key:generate
@@ -102,7 +121,7 @@ php artisan migrate:fresh --seed
 php artisan storage:link
 ```
 
-6. Build assets and run the app.
+7. Build assets and run the app.
 
 ```bash
 npm run build
@@ -123,6 +142,8 @@ php artisan migrate:fresh --seed
 
 ## Example Inquiry Questions
 
+Use `Query only` mode for these:
+
 - "How many journal entries do I have?"
 - "Summarize my school entries."
 - "Which entries are marked as favorites?"
@@ -132,6 +153,8 @@ php artisan migrate:fresh --seed
 - "Which entries mention deadlines?"
 
 ## Example CRUD Commands
+
+Use `CRUD Assistant` mode for these. It can also answer normal inquiry questions, but update and delete actions require confirmation.
 
 Create:
 
@@ -175,12 +198,19 @@ Which ones mention deadlines?
 What about the favorite ones?
 ```
 
+Try this preference sequence:
+
+```text
+Remember I prefer short answers.
+What moods appear most often?
+What about school entries?
+```
+
 ## Routes
 
 - `GET /entries` - main journal dashboard with embedded chatbot widget
-- `POST /chat-send` - web chatbot and assistant endpoint
+- `POST /chat-send` - web popup endpoint; accepts `mode=query` or `mode=crud`
 - `GET /chat-history` - saved browser-session chat history endpoint
-- `GET /chat` - dedicated AI workspace
 - `POST /api/chat` - API chatbot endpoint
 - `POST /api/ai-assistant` - API assistant endpoint
 
@@ -202,7 +232,6 @@ your-lab2-project/
 │   ├── views/
 │   │   ├── layouts/
 │   │   ├── chat/
-│   │   │   ├── index.blade.php             # Chat interface
 │   │   │   └── components/
 │   │   │       └── chat-widget.blade.php   # Chat widget
 │   ├── js/
@@ -216,8 +245,16 @@ your-lab2-project/
 ├── .env                                    # Add AI API keys
 └── README.md                               # Updated docs
 ```
-## App Screenshots
-![App Preview](./assets/ai_workspace_tab.png)
+
+## Chatbot Screenshots
+
+Inquiry chatbot interaction:
+
+![Query-only chatbot interaction](./assets/chatbot_query_interaction.png)
+
+CRUD assistant confirmation interaction:
+
+![CRUD assistant interaction](./assets/crud_assistant_interaction.png)
 
 ## Members
 
