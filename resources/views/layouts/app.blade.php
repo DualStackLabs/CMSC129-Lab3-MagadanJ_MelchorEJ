@@ -37,11 +37,6 @@
                 <a href="/entries/trash" class="flex items-center px-3 py-2 rounded-lg transition font-medium {{ request()->is('entries/trash') ? 'text-[#e22161] bg-pink-50' : 'text-slate-600 hover:text-[#e22161] hover:bg-pink-50' }}">
                     <i class="ph ph-trash mr-3 text-xl"></i> Trash Bin
                 </a>
-                <div class="pt-4 mt-4 border-t border-slate-100">
-                    <a href="/chat" class="flex items-center px-3 py-2 rounded-lg transition font-medium {{ request()->is('chat') ? 'text-[#e22161] bg-pink-50' : 'text-slate-600 hover:text-[#e22161] hover:bg-pink-50' }}">
-                        <i class="ph ph-sparkle mr-3 text-xl"></i> AI Workspace
-                    </a>
-                </div>
             </nav>
         </div>
     </aside>

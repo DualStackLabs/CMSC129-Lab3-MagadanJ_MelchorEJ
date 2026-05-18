@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\AIService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class AIAssistantController extends Controller
@@ -17,21 +18,23 @@ class AIAssistantController extends Controller
     {
         $validated = $request->validate([
             'message' => 'required|string|max:2000',
+            'mode' => 'nullable|in:query,crud',
         ]);
 
         try {
-            return response()->json($this->aiService->generateResponse($validated['message']));
+            return response()->json($this->aiService->generateResponse(
+                $validated['message'],
+                $validated['mode'] ?? ($request->routeIs('api.ai-assistant') ? 'crud' : 'query')
+            ));
         } catch (Throwable $e) {
-            $payload = [
-                'response' => 'Backend Crash: '.$e->getMessage(),
-            ];
+            Log::warning('AI API request failed.', [
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
 
-            if (config('app.debug')) {
-                $payload['debug_info'] = [
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                ];
-            }
+            $payload = [
+                'response' => 'Sorry, the AI assistant could not respond right now. Please check your Gemini keys or try again later.',
+            ];
 
             return response()->json($payload, 500);
         }

@@ -60,12 +60,47 @@ function appendConfirmationControls(box, chatRoute, csrfToken) {
     const [confirmButton, cancelButton] = controls.querySelectorAll('button');
     confirmButton.addEventListener('click', () => {
         controls.remove();
-        window.sendChat(chatRoute, csrfToken, 'yes');
+        window.sendChat(chatRoute, csrfToken, 'yes', 'crud');
     });
     cancelButton.addEventListener('click', () => {
         controls.remove();
-        window.sendChat(chatRoute, csrfToken, 'cancel');
+        window.sendChat(chatRoute, csrfToken, 'cancel', 'crud');
     });
+}
+
+function selectedChatMode(presetMode = null) {
+    if (presetMode) {
+        return presetMode;
+    }
+
+    const mode = document.getElementById('chat-mode')?.value;
+
+    return mode === 'crud' ? 'crud' : 'query';
+}
+
+function saveChatMode() {
+    const mode = selectedChatMode();
+    localStorage.setItem('dailyDraftChatMode', mode);
+}
+
+function restoreChatMode() {
+    const mode = document.getElementById('chat-mode');
+    const savedMode = localStorage.getItem('dailyDraftChatMode');
+
+    if (mode && ['query', 'crud'].includes(savedMode)) {
+        mode.value = savedMode;
+    }
+}
+
+function updateChatPlaceholder() {
+    const input = document.getElementById('chat-input');
+    const mode = selectedChatMode();
+
+    if (!input) return;
+
+    input.placeholder = mode === 'crud'
+        ? 'Ask or change entries...'
+        : 'Ask about your entries...';
 }
 
 window.toggleChat = function toggleChat() {
@@ -81,10 +116,11 @@ window.toggleChat = function toggleChat() {
     }
 };
 
-window.sendChat = async function sendChat(chatRoute, csrfToken, presetMessage = null) {
+window.sendChat = async function sendChat(chatRoute, csrfToken, presetMessage = null, presetMode = null) {
     const input = document.getElementById('chat-input');
     const box = document.getElementById('chat-box');
     const message = (presetMessage ?? input.value).trim();
+    const mode = selectedChatMode(presetMode);
 
     if (!message) return;
 
@@ -102,11 +138,28 @@ window.sendChat = async function sendChat(chatRoute, csrfToken, presetMessage = 
         const response = await fetch(chatRoute, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-            body: JSON.stringify({ message: message }),
+            body: JSON.stringify({ message: message, mode: mode }),
         });
 
-        const data = await response.json();
+        let data = {};
+        try {
+            data = await response.json();
+        } catch (error) {
+            data = {};
+        }
+
         document.getElementById(loadingId)?.remove();
+
+        if (response.status === 429) {
+            appendMessage(box, 'Please wait a moment before sending another AI request.');
+            return;
+        }
+
+        if (!response.ok) {
+            appendMessage(box, data.response || 'The AI assistant could not respond right now. Please try again later.');
+            return;
+        }
+
         appendMessage(box, data.response || 'I did not receive a response.');
 
         if (data.requires_confirmation) {
@@ -126,4 +179,14 @@ window.sendChat = async function sendChat(chatRoute, csrfToken, presetMessage = 
     }
 };
 
-document.addEventListener('DOMContentLoaded', loadChatHistory);
+document.addEventListener('DOMContentLoaded', () => {
+    loadChatHistory();
+    restoreChatMode();
+
+    const mode = document.getElementById('chat-mode');
+    mode?.addEventListener('change', () => {
+        saveChatMode();
+        updateChatPlaceholder();
+    });
+    updateChatPlaceholder();
+});

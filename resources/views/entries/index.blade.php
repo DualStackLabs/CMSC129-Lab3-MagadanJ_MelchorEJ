@@ -18,9 +18,11 @@
         
         <select name="mood" class="border border-slate-200 bg-slate-50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-[#e22161] outline-none text-slate-700 cursor-pointer transition-all">
             <option value="">Any Mood</option>
-            <option value="Happy" {{ request('mood') == 'Happy' ? 'selected' : '' }}>Happy</option>
-            <option value="Focused" {{ request('mood') == 'Focused' ? 'selected' : '' }}>Focused</option>
-            <option value="Stressed" {{ request('mood') == 'Stressed' ? 'selected' : '' }}>Stressed</option>
+            @foreach($moods as $mood)
+                <option value="{{ $mood }}" {{ request('mood') == $mood ? 'selected' : '' }}>
+                    {{ $mood }}
+                </option>
+            @endforeach
         </select>
         
         <button type="submit" class="bg-[#e22161] text-white px-6 py-2 rounded-xl hover:opacity-90 transition font-medium shadow-md shadow-pink-200/50">
@@ -115,7 +117,7 @@
                 <p class="text-slate-500 mb-4 text-lg font-medium">You haven't favorited any entries yet.</p>
                 <a href="/entries" class="text-[#e22161] font-semibold hover:underline">View all entries</a>
             
-            @elseif(request()->filled('search') || request()->filled('mood'))
+            @elseif(request()->filled('search') || request()->filled('mood') || request()->filled('category_id'))
                 {{-- Icons for No Search Results --}}
                 <i class="ph ph-magnifying-glass text-slate-300 text-6xl mb-4 block mx-auto"></i>
                 <p class="text-slate-500 mb-4 text-lg font-medium">No results found for your search.</p>

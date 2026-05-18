@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Entry;
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 
 class EntryController extends Controller
 {
@@ -16,9 +18,17 @@ class EntryController extends Controller
 
         // Search feature
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('content', 'like', '%' . $request->search . '%');
+            $search = trim((string) $request->search);
+            $term = '%' . mb_strtolower($search) . '%';
+
+            $query->where(function (Builder $q) use ($term) {
+                $q->whereRaw('LOWER(title) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(content) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(COALESCE(mood, \'\')) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(COALESCE(location, \'\')) LIKE ?', [$term])
+                    ->orWhereHas('category', function (Builder $categoryQuery) use ($term) {
+                        $categoryQuery->whereRaw('LOWER(name) LIKE ?', [$term]);
+                    });
             });
         }
 
@@ -32,14 +42,20 @@ class EntryController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->filled('is_favorite') == '1') {
+        if ($request->get('is_favorite') === '1') {
             $query->where('is_favorite', true);
         }
 
         $entries = $query->latest()->get();
-        $categories = \App\Models\Category::all(); // Fetch categories for the search bar
+        $categories = Category::orderBy('name')->get(); // Fetch categories for the search bar
+        $moods = Entry::query()
+            ->whereNotNull('mood')
+            ->where('mood', '<>', '')
+            ->distinct()
+            ->orderBy('mood')
+            ->pluck('mood');
 
-        return view('entries.index', compact('entries', 'categories'));
+        return view('entries.index', compact('entries', 'categories', 'moods'));
     }
 
     // 2. SHOW THE CREATE FORM
@@ -137,5 +153,18 @@ class EntryController extends Controller
         $entry->restore();
 
         return redirect()->route('entries.index')->with('success', 'Entry restored successfully!');
+    }
+
+    public function forceDelete($id)
+    {
+        $entry = Entry::onlyTrashed()->findOrFail($id);
+
+        if ($entry->image) {
+            Storage::disk('public')->delete($entry->image);
+        }
+
+        $entry->forceDelete();
+
+        return redirect()->route('entries.trash')->with('success', 'Entry permanently deleted.');
     }
 }

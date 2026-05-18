@@ -9,11 +9,12 @@ Route::get('/', function () {
     return redirect('/entries');
 });
 
-Route::get('/chat', function () {
-    return view('chat.index');
-})->name('chat.index');
-Route::get('/chat-history', [ChatBotController::class, 'history'])->name('chat.history');
-Route::post('/chat-send', [ChatBotController::class, 'chat'])->name('chat.send');
+Route::get('/chat-history', [ChatBotController::class, 'history'])
+    ->middleware('throttle:60,1')
+    ->name('chat.history');
+Route::post('/chat-send', [ChatBotController::class, 'chat'])
+    ->middleware('throttle:20,1')
+    ->name('chat.send');
 
 // 2. The Magic MVC Route
 // This single line automatically generates the routes for your index, create, store, edit, update, and destroy methods!

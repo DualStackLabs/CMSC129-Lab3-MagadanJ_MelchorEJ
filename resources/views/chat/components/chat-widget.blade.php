@@ -14,6 +14,14 @@
         </button>
     </div>
     
+    <div class="px-4 py-3 bg-white border-b border-slate-100">
+        <label for="chat-mode" class="sr-only">AI mode</label>
+        <select id="chat-mode" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-pink-400">
+            <option value="query" selected>Query only</option>
+            <option value="crud">CRUD Assistant</option>
+        </select>
+    </div>
+
     <div id="chat-box" class="h-80 overflow-y-auto p-4 space-y-4 bg-slate-50">
         <div class="bg-pink-100 text-pink-800 p-3 rounded-2xl rounded-bl-none max-w-[85%] text-sm">
             Hi! I'm your AI assistant. Ask me anything about your journal entries!
@@ -23,7 +31,7 @@
     <div class="p-4 bg-white border-t border-slate-100 flex gap-2">
         <input type="text" id="chat-input" 
             onkeypress="if(event.key === 'Enter') handleChatSend()"
-            placeholder="Summarize my week..." 
+            placeholder="Ask about your entries..." 
             class="flex-1 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-pink-400">
         
         <button onclick="handleChatSend()" 
