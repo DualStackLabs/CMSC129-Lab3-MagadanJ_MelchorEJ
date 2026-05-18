@@ -24,6 +24,8 @@ return [
 
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
+        'backup_key' => env('GEMINI_API_KEY_BACKUP'),
+        'backup_key_2' => env('GEMINI_API_KEY_BACKUP_2'),
         'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
     ],
 
