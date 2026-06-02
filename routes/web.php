@@ -5,9 +5,7 @@ use App\Http\Controllers\EntryController;
 use App\Http\Controllers\ChatBotController;
 
 // 1. Redirect the homepage straight to your dashboard
-Route::get('/', function () {
-    return redirect('/entries');
-});
+Route::redirect('/', '/entries');
 
 Route::get('/chat-history', [ChatBotController::class, 'history'])
     ->middleware('throttle:60,1')
